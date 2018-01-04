@@ -1,0 +1,38 @@
+Part1:
+
+	For all process, page address 0 (first page address) PTE_P is set to 0
+	When pagefault trigger for that page, the process will be killed for null pointer
+
+Part2:
+
+	exec is changed such that:
+		The memory layout of any process will be:
+		|null page|code|stack|heap|
+		inside stack:
+		|reserved address space|guardpg|stack|
+		
+	the proc->sz will include all the space inside stack including reserved spaces.
+
+	proc->guardpg, proc->stacktop, proc->stacklastpg
+	are added to keep track of stack info.
+
+	Functions like cowuvm will skip the pages that are in the reserved spaces.
+
+	The stack pages and the guard page are copy on fork
+
+	All syscall arg checking functions like argptr will reject any address in the 
+	guard page and reserved spaces
+	special treatment was given to the init process for the those checking
+	
+	If the new guard page address needed for expanding stack is < proc->stacklastpg, 
+	processes will be killed for stackoverflow
+	
+Part3:
+
+	Nothing special was done. Followed instructions.
+	
+	
+unittestlab3.c includes all the unit test i have written for all parts of this lab.
+DEBUG marco is added for debugging, DEBUGPRINT is set to 0 for submission.
+
+usertests was ran

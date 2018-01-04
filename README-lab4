@@ -1,0 +1,34 @@
+PART1:
+	1.save VMA at exec for shm
+	2.for functions in vm.c, include the cases regarding shm space.
+		(not allocated, allocated space)
+	3.ref count increased and mapped to child on fork
+	4.syscall on shm space that is not allocated will be rejected
+	5.pte flag is not used. Rather, shm status are keep track in proc structs.
+	6.that proc info is copy over on fork
+	
+PART2:
+	1.for futex wait, ptable.lockand sleep(loc, &ptable.lock) is used
+	2.futex_wake will return number of process waked. 
+		wakeupfutex and wakeupfutex1 are created to make that happen
+	3.using ptable.lock will ensure atomicity since futex_wake and futex_wait 
+		will compete over the lock
+	4.no deadlock were found in run futextest.c
+	
+PART3:
+	1.test and set is used to implement mutex.
+		1 is locked and 0 is unlocked
+		__sync_lock_test_and_set will ensure the change between 0 to 1 is atomic
+	2.cond_var_t contains a mutex (cvslock) to ensure atomicity
+	3.cv_wait will grab the cvslock before releasing the mutex.
+		since cv_bcast also need cvslock to call futex_wake, cvslock ensure
+		bcast can not happen until cv_wait finshed.
+	4.cv_wait calls futex_wait2, a new syscall like futex_wait but will release 
+		cvslock and wake processes waiting on cvslock after grabbing ptable.lock.
+		wakeupfutex2 is created for the this especial case where the ptable is 
+		alreadt held on calling wake. 
+		Ather the release of the cvslock, cv_bcast will call futex_wake which 
+		will call wakeupfutex which need ptable.lock to process. Therefore 
+		atomicity between release the mutex and sleeping is ensured
+	5.checksum.c first calcuate the checksum by a single process. Then 
+		4 producers and 4 consumers process are created and the numbers agreed.

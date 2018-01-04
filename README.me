@@ -1,0 +1,21 @@
+Lab2 Copy-on-Write Fork
+
+kalloc.c:
+	-A speical kfree() named kfree2() was writen for freerange use only. 
+	Since asserting reference count at that stage can be zero.
+	-Atomic instruc were used to inclement and decrement the reference count.
+trap.c:
+	-A page fault handler was registered. The handler function is in vm.c
+vm.c:
+	-deallocuvm() was changed to only call kfree with reference count is one.
+	-cowuvm() implemented page mapping part of copy-on-write.
+	If the page is already read only, dont flag PTE_COW. Program should be killed on write.
+	-pagefault() is the page fault handler. FEC_U and FEC_PD checks were commented out for causing issues.
+	When a page fault occur, if it is cause by writing on a read only page with PTE_COW bit on, 
+	if reference count >, alloc page and copy. If reference = 1, allow write and remove PTE_COW flag. 
+forktest.c
+	-three additional tests were added.
+		1. child exec a program
+		2. write after fork, force page copying to occur
+		3. intentionally trigger page fault to test correctness.
+	
